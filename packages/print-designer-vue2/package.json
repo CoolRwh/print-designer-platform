@@ -1,0 +1,18 @@
+{
+  "name": "@print-designer/designer-vue2",
+  "version": "0.1.0",
+  "main": "dist/print-designer-vue2.common.js",
+  "module": "dist/print-designer-vue2.esm.js",
+  "scripts": { "build": "webpack --config webpack.config.js" },
+  "files": ["src", "dist"],
+  "peerDependencies": { "vue": ">=2.6.0 <3.0.0" },
+  "dependencies": { "@print-designer/designer": "workspace:*" },
+  "devDependencies": {
+    "css-loader": "^7.1.2",
+    "style-loader": "^4.0.0",
+    "vue-loader": "^15.11.1",
+    "vue-template-compiler": "^2.7.16",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1"
+  }
+}

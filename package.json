@@ -1,0 +1,12 @@
+{
+  "name": "print-designer-platform",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:vue2": "pnpm --filter @print-designer/designer-vue2 build",
+    "build:designer": "pnpm --filter @print-designer/designer build:lib",
+    "dev": "pnpm --filter @print-designer/designer dev"
+  }
+}
