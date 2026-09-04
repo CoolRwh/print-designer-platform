@@ -56,6 +56,7 @@ export default {
   },
   methods: {
     save: function () { this.$emit('save', this.adapter.getTemplate()) },
+    getHtml: function (data) { return this.adapter ? this.adapter.getHtml(data || this.data) : '' },
     preview: function () { this.$emit('preview', this.data) },
     print: function () { this.$emit('print', this.data); this.adapter.print(this.data) }
   }

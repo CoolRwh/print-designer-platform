@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import App from './components/DesignerApp.vue'
+import type { PrintData } from './core/types'
 
 defineProps<{
   template?: Record<string, unknown>
@@ -10,8 +12,16 @@ defineProps<{
   testCases?: import('./core/types').DesignerTestCase[]
   initialTestCaseId?: string
 }>()
+
+const app = ref<InstanceType<typeof App>>()
+
+function getHtml(data?: PrintData) {
+  return app.value?.getHtml(data) ?? ''
+}
+
+defineExpose({ getHtml })
 </script>
 
 <template>
-  <App v-bind="$props" />
+  <App ref="app" v-bind="$props" />
 </template>

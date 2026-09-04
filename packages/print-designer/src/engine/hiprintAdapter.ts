@@ -59,7 +59,12 @@ export class HiprintAdapter implements PrintAdapter {
   undo() { this.instance?.undo?.() }
   redo() { this.instance?.redo?.() }
   clear() { this.instance?.clear() }
-  preview(target: HTMLElement, data: PrintData) { $(target).empty().append(this.instance.getHtml(data)) }
+  getHtml(data: PrintData) {
+    if (!this.instance) throw new Error('打印设计器尚未初始化')
+    const html = this.instance.getHtml(data)
+    return html?.[0]?.outerHTML ?? ''
+  }
+  preview(target: HTMLElement, data: PrintData) { $(target).empty().append(this.getHtml(data)) }
   print(data: PrintData) { this.instance?.print(data) }
   async silentPrint(data: PrintData) {
     if (window.electronPrint) return window.electronPrint({ template: this.getTemplate(), data })

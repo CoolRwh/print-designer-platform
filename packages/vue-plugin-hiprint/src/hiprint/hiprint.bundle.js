@@ -4862,15 +4862,18 @@ var hiprint = function (t) {
       return t.prototype.createTarget = function () {
         this.target = $(`<div class="hiprint-option-item hiprint-option-item-row"><div class="hiprint-option-item-label">${i18n.__('面板排列')}</div></div>`);
         this.layoutType = $(`<div class="hiprint-option-item-field" style="display: flex;align-items: baseline;"><div style="width:25%">${i18n.__('排列方式')}:</div><select style="width:75%" class="auto-submit"><option value="column" >${i18n.__('纵向')}</option><option value="row" >${i18n.__('横向')}</option></select></div></div>`)
+        this.layoutColumns = $(`<div class="hiprint-option-item-field" style="display: flex;align-items: baseline;margin-top: 4px"><div style="width:25%">${i18n.__('每排数量')}:</div><input style="width:75%" type="number" min="1" step="1" placeholder="${i18n.__('每排标签数')}" class="auto-submit"></div>`);
         this.layoutRowGap = $(`<div class="hiprint-option-item-field" style="display: flex;align-items: baseline;margin-top: 4px"><div style="width:25%">${i18n.__('垂直间距')}:</div><input style="width:75%" type="text" placeholder="${i18n.__('垂直间距mm')}" class="auto-submit"></div>`);
         this.layoutColumnGap = $(`<div class="hiprint-option-item-field" style="display: flex;align-items: baseline;margin-top: 4px"><div style="width:25%">${i18n.__('水平间距')}:</div><input style="width:75%" type="text" placeholder="${i18n.__('水平间距mm')}" class="auto-submit"></div>`);
         this.target.append(this.layoutType)
+        this.target.append(this.layoutColumns)
         this.target.append(this.layoutRowGap)
         this.target.append(this.layoutColumnGap)
         return this.target;
       }, t.prototype.getValue = function () {
         let opt = {
           layoutType: this.layoutType.find("select").val() || 'column',
+          layoutColumns: Math.max(1, parseInt(this.layoutColumns.find('input').val() || 1)),
           layoutRowGap:parseInt(this.layoutRowGap.find('input').val() || 0),
           layoutColumnGap:parseInt(this.layoutColumnGap.find('input').val() || 0),
         }
@@ -4879,6 +4882,7 @@ var hiprint = function (t) {
       }, t.prototype.setValue = function (t) {
         this.options = t;
         this.layoutType.find("select").val(t.layoutType || 'column');
+        this.layoutColumns.find("input").val(t.layoutColumns || 1);
         this.layoutRowGap.find("input").val(t.layoutRowGap);
         this.layoutColumnGap.find("input").val(t.layoutColumnGap);
       }, t.prototype.destroy = function () {
@@ -10125,18 +10129,37 @@ var hiprint = function (t) {
         if(this.panelLayoutOptions && this.panelLayoutOptions['layoutType'] === 'row'){
           layoutStyle = `
             <style>
-            .hiprint-printTemplate{
-              margin: -${(Number(this.panelLayoutOptions['layoutRowGap']) || 0) / 2}mm -${(Number(this.panelLayoutOptions['layoutColumnGap']) || 0) / 2}mm;
+            .hiprint-printTemplate { margin: 0; padding: 0; }
+            .hiprint-printTemplate .hiprint-layout-page {
+              position: relative;
+              overflow: hidden;
+              page-break-inside: avoid;
+              break-inside: avoid;
             }
               .hiprint-printTemplate .hiprint-printPanel {
-                display:inline-block;
-                padding: ${(Number(this.panelLayoutOptions['layoutRowGap']) || 0) / 2}mm ${(Number(this.panelLayoutOptions['layoutColumnGap']) || 0) / 2}mm;
+                position: absolute;
+                top: 0;
+                margin: 0;
+                padding: 0;
+                page-break-after: auto !important;
+                break-after: auto !important;
+              }
+              .hiprint-printTemplate .hiprint-layout-page .hiprint-printPaper {
+                page-break-after: auto !important;
+                break-after: auto !important;
               }
             </style>
           `
         }
         return layoutStyle + " <style printStyle>\n        @page\n        {\n             border:0;\n             padding:0cm;\n             margin:0cm;\n             " + this.getPrintSizeStyle() + "\n        }\n        </style>\n";
       }, t.prototype.getPrintSizeStyle = function () {
+        if (this.panelLayoutOptions && this.panelLayoutOptions['layoutType'] === 'row') {
+          var columns = Math.max(1, parseInt(this.panelLayoutOptions['layoutColumns'] || 1));
+          if (columns > 1) {
+            var columnGap = Number(this.panelLayoutOptions['layoutColumnGap']) || 0;
+            return "size: " + (this.width * columns + columnGap * (columns - 1)) + "mm " + this.height + "mm;";
+          }
+        }
         return this.paperType ? "size:" + this.paperType + " " + (this.height > this.width ? "portrait" : "landscape") + ";" : "size: " + this.width + "mm " + this.height + "mm " + (this.orient ? 1 == this.orient ? "portrait" : "landscape" : "") + ";";
       }, t.prototype.deletePrintElement = function (t) {
         var e = this;
@@ -10645,6 +10668,7 @@ var hiprint = function (t) {
             delete hinnn._paperList;
           }
         });
+        this.applyPanelLayout(i);
         return e && e.imgToBase64 && this.transformImg(i.find("img")), i;
       }, t.prototype.getSimpleHtmlAsync = function (dataItemOrList, e) {
         return new Promise(resolve => {
@@ -10672,12 +10696,37 @@ var hiprint = function (t) {
 
           function onFinish() {
             delete hinnn._paperList;
+            that.applyPanelLayout(rootElement);
             e && e.imgToBase64 && that.transformImg(rootElement.find("img"));
             resolve(rootElement)
           }
 
           appendElementByParamsList(paramsListToCreateHTML, onFinish);
         });
+      }, t.prototype.applyPanelLayout = function (rootElement) {
+        if (this.printPanels.length !== 1) return rootElement;
+        var panel = this.printPanels[0], layout = panel.panelLayoutOptions || {};
+        if (layout.layoutType !== 'row') return rootElement;
+        var columns = Math.max(1, parseInt(layout.layoutColumns || 1));
+        if (columns < 2) return rootElement;
+        var columnGap = Number(layout.layoutColumnGap) || 0;
+        var pageWidth = panel.width * columns + columnGap * (columns - 1);
+        var pageHeight = panel.height;
+        // Chromium converts millimetres to fractional CSS pixels. Keeping the
+        // flow box a hair shorter prevents an otherwise empty trailing page.
+        var layoutPageHeight = Math.max(0, pageHeight - 0.1);
+        var panels = rootElement.children('.hiprint-printPanel').detach();
+        panels.each(function (index, element) {
+          var pageIndex = Math.floor(index / columns);
+          var page = rootElement.children('.hiprint-layout-page').eq(pageIndex);
+          if (!page.length) {
+            page = $('<div class="hiprint-layout-page"></div>').css({ width: pageWidth + 'mm', height: layoutPageHeight + 'mm' });
+            rootElement.append(page);
+          }
+          $(element).css({ left: (index % columns) * (panel.width + columnGap) + 'mm' });
+          page.append(element);
+        });
+        return rootElement;
       }, t.prototype.getHtml = function (t, e) {
         return t || (t = {}), this.getSimpleHtml(t, e);
       }, t.prototype.getHtmlAsync = function (t, e) {

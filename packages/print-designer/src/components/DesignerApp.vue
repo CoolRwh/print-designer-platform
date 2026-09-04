@@ -29,6 +29,7 @@ const emit = defineEmits<{
   (event: 'template-error', error: unknown): void
   (event: 'preview', data: PrintData): void
   (event: 'print', data: PrintData): void
+  (event: 'html', html: string): void
   (event: 'save', template: Record<string, unknown>): void
   (event: 'plugin-add', plugin: BusinessPlugin): void
   (event: 'plugin-remove', id: string): void
@@ -128,6 +129,30 @@ function importJson(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return
   const reader = new FileReader(); reader.onload = () => { try { adapter.updateTemplate(JSON.parse(String(reader.result))); notify('模板导入成功') } catch { notify('模板 JSON 无效') } }; reader.readAsText(file)
 }
+function getHtml(data: PrintData = sampleData.value) { return adapter.getHtml(data) }
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text)
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const copied = document.execCommand('copy')
+  textarea.remove()
+  if (!copied) throw new Error('浏览器不允许访问剪贴板')
+}
+async function copyHtml() {
+  try {
+    const html = getHtml()
+    emit('html', html)
+    await writeClipboard(html)
+    notify('HTML 已复制到剪贴板')
+  }
+  catch (error) {
+    emit('template-error', error)
+    notify(error instanceof Error ? `获取 HTML 失败：${error.message}` : '获取 HTML 失败')
+  }
+}
 async function openPreview() { previewOpen.value = true; emit('preview', sampleData.value); await nextTick(); if (previewBody.value) adapter.preview(previewBody.value, sampleData.value) }
 async function silentPrint() { try { emit('print', sampleData.value); await adapter.silentPrint(sampleData.value); notify('打印任务已发送') } catch (error) { emit('template-error', error); notify(error instanceof Error ? error.message : '打印失败') } }
 function clearTemplate() { if (window.confirm('确定清空当前页面的全部元素吗？')) { adapter.clear(); dirty.value = true } }
@@ -139,6 +164,8 @@ function filterPlugin(id: string) {
     row.style.display = id === 'all' || tid.includes(`.${id}.`) ? '' : 'none'
   })
 }
+
+defineExpose({ getHtml })
 </script>
 
 <template>
@@ -157,7 +184,7 @@ function filterPlugin(id: string) {
         </label>
         <button title="撤销" @click="adapter.undo()">↶</button><button title="重做" @click="adapter.redo()">↷</button><i></i>
         <button @click="save">保存</button><button @click="exportJson">导出 JSON</button>
-        <button @click="fileInput?.click()">导入</button><input ref="fileInput" hidden type="file" accept="application/json" @change="importJson" />
+        <button @click="fileInput?.click()">导入</button><input ref="fileInput" hidden type="file" accept="application/json" @change="importJson" /><button @click="copyHtml">获取 HTML</button>
         <button class="primary" @click="openPreview">预览</button><button class="accent" @click="silentPrint">打印</button>
       </div>
       </slot>

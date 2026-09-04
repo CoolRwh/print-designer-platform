@@ -55,6 +55,7 @@ export interface PrintAdapter {
   undo(): void
   redo(): void
   clear(): void
+  getHtml(data: PrintData): string
   preview(target: HTMLElement, data: PrintData): void
   print(data: PrintData): void
   silentPrint(data: PrintData): Promise<void>
