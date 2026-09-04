@@ -5,8 +5,8 @@ export const starterTemplate = {
     paperType: 'A4',
     height: 296.6,
     width: 210,
-    paperHeader: 49.5,
-    paperFooter: 780,
+    paperHeader: 66,
+    paperFooter: 760,
     printElements: [
       { options: { left: 60, top: 30, height: 32, width: 475, title: '订单发货单', fontSize: 22, lineHeight: 30, fontWeight: '700', textAlign: 'center', textContentVerticalAlign: 'middle', hideTitle: true }, printElementType: { title: '标题', type: 'text' } },
       { options: { left: 60, top: 78, height: 18, width: 250, field: 'store.name', testData: '杭州湖滨旗舰店' }, printElementType: { title: '门店名称', type: 'text' } },

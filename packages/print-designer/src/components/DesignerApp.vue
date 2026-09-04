@@ -2,15 +2,18 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { HiprintAdapter } from '../engine/hiprintAdapter'
 import { createPluginRegistry } from '../core/pluginRegistry'
-import type { BusinessPlugin, DesignerChangeType, DesignerModules } from '../core/types'
+import type { BusinessPlugin, DesignerChangeType, DesignerModules, DesignerTestCase, PrintData } from '../core/types'
 import { plugins as builtinPlugins } from '../plugins'
+import PluginManager from './PluginManager.vue'
 
 const props = withDefaults(defineProps<{
   template?: Record<string, unknown>
-  data?: Record<string, unknown>
+  data?: PrintData
   title?: string
   plugins?: BusinessPlugin[]
   modules?: DesignerModules
+  testCases?: DesignerTestCase[]
+  initialTestCaseId?: string
 }>(), { title: '订单发货单', modules: () => ({}) })
 
 const modules = computed(() => ({
@@ -24,13 +27,20 @@ const emit = defineEmits<{
   (event: 'template-change', type: DesignerChangeType, template: Record<string, unknown>): void
   (event: 'template-ready', template: Record<string, unknown>, adapter: HiprintAdapter): void
   (event: 'template-error', error: unknown): void
-  (event: 'preview', data: Record<string, unknown>): void
-  (event: 'print', data: Record<string, unknown>): void
+  (event: 'preview', data: PrintData): void
+  (event: 'print', data: PrintData): void
   (event: 'save', template: Record<string, unknown>): void
+  (event: 'plugin-add', plugin: BusinessPlugin): void
+  (event: 'plugin-remove', id: string): void
+  (event: 'update:plugins', plugins: BusinessPlugin[]): void
+  (event: 'test-case-change', testCase: DesignerTestCase): void
 }>()
 
+const pluginRevision = ref(0)
+const pluginManagerOpen = ref(false)
 function registerExternalPlugins(value?: BusinessPlugin[]) {
   registry.syncExternal(value ?? [])
+  pluginRevision.value++
 }
 registerExternalPlugins(props.plugins)
 
@@ -47,9 +57,12 @@ const previewBody = ref<HTMLElement>()
 const fileInput = ref<HTMLInputElement>()
 const toast = ref('就绪')
 const activePlugin = ref('all')
+const activeTestCaseId = ref(props.initialTestCaseId ?? '')
 
-const plugins = computed(() => registry.all())
-const sampleData = computed(() => props.data ?? registry.sampleData())
+const plugins = computed(() => { pluginRevision.value; return registry.all() })
+const activeTestCase = computed(() => props.testCases?.find((item) => item.id === activeTestCaseId.value))
+const sampleData = computed(() => activeTestCase.value?.data ?? props.data ?? registry.sampleData())
+const documentTitle = computed(() => activeTestCase.value?.name ?? props.title)
 const paperTypes: Record<string, [number, number]> = { A4: [210, 296.6], A5: [148, 210], A3: [297, 420], '80mm': [80, 160] }
 const zoomLabel = computed(() => `${Math.round(zoom.value * 100)}%`)
 
@@ -67,6 +80,20 @@ watch(() => props.plugins, (value) => {
   if (mounted) adapter.refreshPlugins()
 }, { deep: true })
 
+function addPlugin(plugin: BusinessPlugin) {
+  try {
+    if (registry.get(plugin.id)) throw new Error(`插件 ${plugin.id} 已存在`)
+    emit('update:plugins', [...(props.plugins ?? []), plugin])
+    emit('plugin-add', plugin)
+    notify(`插件 ${plugin.name} 已提交`)
+  }
+  catch (error) { emit('template-error', error); notify(error instanceof Error ? error.message : '插件添加失败') }
+}
+function removePlugin(id: string) {
+  emit('update:plugins', (props.plugins ?? []).filter((plugin) => plugin.id !== id))
+  emit('plugin-remove', id)
+}
+
 watch(() => props.template, (value) => {
   if (mounted && value) adapter.updateTemplate(value)
 }, { deep: true })
@@ -82,8 +109,16 @@ function fitCanvas() {
   adapter.zoom(zoom.value)
 }
 function changePaper() { const [w, h] = paperTypes[paper.value]; adapter.setPaper(w, h); dirty.value = true }
-function save() { const template = adapter.getTemplate(); localStorage.setItem('print-studio-template', JSON.stringify(template)); dirty.value = false; emit('save', template); notify('模板已保存到本地') }
-function restore() { const raw = localStorage.getItem('print-studio-template'); if (!raw) return notify('没有找到本地模板'); adapter.updateTemplate(JSON.parse(raw)); dirty.value = false; notify('模板已恢复') }
+function loadTestCase() {
+  const testCase = activeTestCase.value
+  if (!testCase) return
+  adapter.updateTemplate(testCase.template)
+  dirty.value = false
+  emit('test-case-change', testCase)
+  notify(`已加载：${testCase.name}`)
+  window.setTimeout(fitCanvas, 80)
+}
+function save() { const template = adapter.getTemplate(); dirty.value = false; emit('save', template); notify('已提交保存事件') }
 function exportJson() {
   const blob = new Blob([JSON.stringify(adapter.getTemplate(), null, 2)], { type: 'application/json' })
   const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `print-template-${Date.now()}.json`; link.click(); URL.revokeObjectURL(link.href)
@@ -94,7 +129,7 @@ function importJson(event: Event) {
   const reader = new FileReader(); reader.onload = () => { try { adapter.updateTemplate(JSON.parse(String(reader.result))); notify('模板导入成功') } catch { notify('模板 JSON 无效') } }; reader.readAsText(file)
 }
 async function openPreview() { previewOpen.value = true; emit('preview', sampleData.value); await nextTick(); if (previewBody.value) adapter.preview(previewBody.value, sampleData.value) }
-async function silentPrint() { try { emit('print', sampleData.value); await adapter.silentPrint(sampleData.value); notify('打印任务已发送') } catch (error) { notify(error instanceof Error ? error.message : '打印失败') } }
+async function silentPrint() { try { emit('print', sampleData.value); await adapter.silentPrint(sampleData.value); notify('打印任务已发送') } catch (error) { emit('template-error', error); notify(error instanceof Error ? error.message : '打印失败') } }
 function clearTemplate() { if (window.confirm('确定清空当前页面的全部元素吗？')) { adapter.clear(); dirty.value = true } }
 function filterPlugin(id: string) {
   activePlugin.value = id
@@ -111,10 +146,17 @@ function filterPlugin(id: string) {
     <header v-if="modules.toolbar" class="topbar">
       <slot name="toolbar">
       <div class="brand"><span class="brand-mark">P</span><div><strong>Print Studio</strong><small>HIPRINT DESIGNER</small></div></div>
-      <div class="doc-name"><span class="status-dot"></span>{{ props.title }} <span v-if="dirty" class="dirty">未保存</span></div>
+      <div class="doc-name"><span class="status-dot"></span>{{ documentTitle }} <span v-if="dirty" class="dirty">未保存</span></div>
       <div class="toolbar-actions">
+        <label v-if="props.testCases?.length" class="test-case-picker">
+          <span>模板中心</span>
+          <select v-model="activeTestCaseId" title="从模板中心加载模板" @change="loadTestCase">
+            <option value="" disabled>请选择</option>
+            <option v-for="testCase in props.testCases" :key="testCase.id" :value="testCase.id">{{ testCase.name }}</option>
+          </select>
+        </label>
         <button title="撤销" @click="adapter.undo()">↶</button><button title="重做" @click="adapter.redo()">↷</button><i></i>
-        <button @click="restore">打开</button><button @click="save">保存</button><button @click="exportJson">导出 JSON</button>
+        <button @click="save">保存</button><button @click="exportJson">导出 JSON</button>
         <button @click="fileInput?.click()">导入</button><input ref="fileInput" hidden type="file" accept="application/json" @change="importJson" />
         <button class="primary" @click="openPreview">预览</button><button class="accent" @click="silentPrint">打印</button>
       </div>
@@ -124,7 +166,7 @@ function filterPlugin(id: string) {
     <main class="workspace">
       <aside v-if="modules.palette" class="palette panel">
         <slot name="palette">
-        <div class="panel-heading"><span>{{ modules.labels?.palette ?? '业务组件' }}</span><button title="插件管理">＋</button></div>
+        <div class="panel-heading"><span>{{ modules.labels?.palette ?? '业务组件' }}</span><button title="插件管理" @click="pluginManagerOpen = true">＋</button></div>
         <div class="plugin-tabs">
           <button :class="{ active: activePlugin === 'all' }" @click="filterPlugin('all')">全部</button>
           <button v-for="plugin in plugins" :key="plugin.id" :class="{ active: activePlugin === plugin.id }" :style="{ '--plugin': plugin.color }" @click="filterPlugin(plugin.id)">{{ plugin.icon }} {{ plugin.name }}</button>
@@ -165,5 +207,6 @@ function filterPlugin(id: string) {
     <div v-if="previewOpen" class="modal-backdrop" @click.self="previewOpen = false">
       <div class="preview-modal"><div class="preview-head"><div><strong>打印预览</strong><small>使用示例业务数据渲染</small></div><div><button @click="adapter.print(sampleData)">浏览器打印</button><button class="close" @click="previewOpen = false">×</button></div></div><div class="preview-scroll"><div ref="previewBody" class="preview-body"></div></div></div>
     </div>
+    <PluginManager v-if="pluginManagerOpen" :plugins="props.plugins ?? []" @close="pluginManagerOpen = false" @add="addPlugin" @remove="removePlugin" />
   </div>
 </template>

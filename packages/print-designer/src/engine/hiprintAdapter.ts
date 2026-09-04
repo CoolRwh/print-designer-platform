@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import { hiprint } from '@hiprint-engine'
-import type { PrintAdapter } from '../core/types'
+import type { PrintAdapter, PrintData } from '../core/types'
 import { pluginRegistry as defaultPluginRegistry, type PluginRegistry } from '../core/pluginRegistry'
 import { starterTemplate } from '../templates/starterTemplate'
 import type { DesignerChangeType } from '../core/types'
@@ -59,9 +59,9 @@ export class HiprintAdapter implements PrintAdapter {
   undo() { this.instance?.undo?.() }
   redo() { this.instance?.redo?.() }
   clear() { this.instance?.clear() }
-  preview(target: HTMLElement, data: Record<string, unknown>) { $(target).empty().append(this.instance.getHtml(data)) }
-  print(data: Record<string, unknown>) { this.instance?.print(data) }
-  async silentPrint(data: Record<string, unknown>) {
+  preview(target: HTMLElement, data: PrintData) { $(target).empty().append(this.instance.getHtml(data)) }
+  print(data: PrintData) { this.instance?.print(data) }
+  async silentPrint(data: PrintData) {
     if (window.electronPrint) return window.electronPrint({ template: this.getTemplate(), data })
     if (this.instance?.print2) { this.instance.print2(data, { title: 'Print Studio' }); return }
     throw new Error('未检测到 Electron bridge 或 Hiprint 打印客户端')

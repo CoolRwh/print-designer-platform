@@ -7,6 +7,7 @@ export * from './core/types'
 export { PluginRegistry, pluginRegistry, createPluginRegistry, registerPlugin } from './core/pluginRegistry'
 export { plugins } from './plugins'
 export { HiprintAdapter } from './engine/hiprintAdapter'
+export { designerTestCases, twoColumnLabelsCase, tableCodeColumnsCase, deliveryOrderCase } from './test-cases'
 
 export const PrintDesigner = {
   install(app: VueApp) {

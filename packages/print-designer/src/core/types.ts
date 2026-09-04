@@ -23,6 +23,18 @@ export interface DesignerSnapshot {
   savedAt: string
 }
 
+/** 单据使用对象，批量标签使用对象数组。 */
+export type PrintData = Record<string, unknown> | Array<Record<string, unknown>>
+
+export interface DesignerTestCase {
+  id: string
+  name: string
+  description: string
+  template: Record<string, unknown>
+  data: PrintData
+  assertions: string[]
+}
+
 export interface DesignerModules {
   toolbar?: boolean
   palette?: boolean
@@ -43,9 +55,9 @@ export interface PrintAdapter {
   undo(): void
   redo(): void
   clear(): void
-  preview(target: HTMLElement, data: Record<string, unknown>): void
-  print(data: Record<string, unknown>): void
-  silentPrint(data: Record<string, unknown>): Promise<void>
+  preview(target: HTMLElement, data: PrintData): void
+  print(data: PrintData): void
+  silentPrint(data: PrintData): Promise<void>
 }
 
 export type DesignerChangeType = 'add' | 'move' | 'delete' | 'update' | 'resize' | 'rotate' | string

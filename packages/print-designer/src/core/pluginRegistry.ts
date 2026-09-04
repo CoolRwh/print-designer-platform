@@ -38,6 +38,12 @@ export class PluginRegistry {
     return this.plugins.get(id)
   }
 
+  unregister(id: string) {
+    if (this.builtinPluginIds.has(id)) throw new Error(`内置插件 ${id} 不能删除`)
+    this.plugins.delete(id)
+    this.externalPluginIds.delete(id)
+  }
+
   sampleData() {
     return Object.assign({}, ...this.all().map((plugin) => plugin.sampleData))
   }
