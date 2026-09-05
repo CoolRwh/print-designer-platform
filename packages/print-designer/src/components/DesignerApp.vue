@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { HiprintAdapter } from '../engine/hiprintAdapter'
 import { createPluginRegistry } from '../core/pluginRegistry'
-import type { BusinessPlugin, DesignerChangeType, DesignerModules, DesignerTestCase, PrintData } from '../core/types'
+import type { BusinessPlugin, DesignerChangeType, DesignerModules, DesignerTestCase, FullHtmlOptions, PrintData } from '../core/types'
 import { plugins as builtinPlugins } from '../plugins'
 import PluginManager from './PluginManager.vue'
 
@@ -130,6 +130,7 @@ function importJson(event: Event) {
   const reader = new FileReader(); reader.onload = () => { try { adapter.updateTemplate(JSON.parse(String(reader.result))); notify('模板导入成功') } catch { notify('模板 JSON 无效') } }; reader.readAsText(file)
 }
 function getHtml(data: PrintData = sampleData.value) { return adapter.getHtml(data) }
+function getFullHtml(data: PrintData = sampleData.value, options: FullHtmlOptions = {}) { return adapter.getFullHtml(data, { title: documentTitle.value, ...options }) }
 async function writeClipboard(text: string) {
   if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text)
   const textarea = document.createElement('textarea')
@@ -143,7 +144,7 @@ async function writeClipboard(text: string) {
 }
 async function copyHtml() {
   try {
-    const html = getHtml()
+    const html = getFullHtml()
     emit('html', html)
     await writeClipboard(html)
     notify('HTML 已复制到剪贴板')
@@ -165,7 +166,7 @@ function filterPlugin(id: string) {
   })
 }
 
-defineExpose({ getHtml })
+defineExpose({ getHtml, getFullHtml })
 </script>
 
 <template>

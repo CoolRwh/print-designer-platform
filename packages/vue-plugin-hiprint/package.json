@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "main": "index.js",
+  "scripts": { "test": "node --test test/*.test.js" },
   "files": ["index.js", "src"],
   "dependencies": {
     "@claviska/jquery-minicolors": "^2.3.6",

@@ -26,6 +26,11 @@ export interface DesignerSnapshot {
 /** 单据使用对象，批量标签使用对象数组。 */
 export type PrintData = Record<string, unknown> | Array<Record<string, unknown>>
 
+export interface FullHtmlOptions {
+  title?: string
+  lang?: string
+}
+
 export interface DesignerTestCase {
   id: string
   name: string
@@ -56,6 +61,7 @@ export interface PrintAdapter {
   redo(): void
   clear(): void
   getHtml(data: PrintData): string
+  getFullHtml(data: PrintData, options?: FullHtmlOptions): string
   preview(target: HTMLElement, data: PrintData): void
   print(data: PrintData): void
   silentPrint(data: PrintData): Promise<void>

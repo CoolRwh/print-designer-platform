@@ -69,6 +69,7 @@ import fr from "../i18n/fr.json";
 import it from "../i18n/it.json";
 import ja from "../i18n/ja.json";
 import ru from "../i18n/ru.json";
+import { applyRowPanelLayout, createRowLayoutStyle, getRowLayoutPrintSize } from "./layout/panel-layout.js";
 
 window.$ = window.jQuery = $;
 window.autoConnect = true;
@@ -10125,41 +10126,11 @@ var hiprint = function (t) {
         var e;
         return (e = t.tid ? a.instance.getElementType(t.tid) : nt.createPrintElementType(t.printElementType)) || console.log("miss " + JSON.stringify(t)), e;
       }, t.prototype.getPrintStyle = function () {
-        let layoutStyle = ''
-        if(this.panelLayoutOptions && this.panelLayoutOptions['layoutType'] === 'row'){
-          layoutStyle = `
-            <style>
-            .hiprint-printTemplate { margin: 0; padding: 0; }
-            .hiprint-printTemplate .hiprint-layout-page {
-              position: relative;
-              overflow: hidden;
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
-              .hiprint-printTemplate .hiprint-printPanel {
-                position: absolute;
-                top: 0;
-                margin: 0;
-                padding: 0;
-                page-break-after: auto !important;
-                break-after: auto !important;
-              }
-              .hiprint-printTemplate .hiprint-layout-page .hiprint-printPaper {
-                page-break-after: auto !important;
-                break-after: auto !important;
-              }
-            </style>
-          `
-        }
+        const layoutStyle = createRowLayoutStyle(this);
         return layoutStyle + " <style printStyle>\n        @page\n        {\n             border:0;\n             padding:0cm;\n             margin:0cm;\n             " + this.getPrintSizeStyle() + "\n        }\n        </style>\n";
       }, t.prototype.getPrintSizeStyle = function () {
-        if (this.panelLayoutOptions && this.panelLayoutOptions['layoutType'] === 'row') {
-          var columns = Math.max(1, parseInt(this.panelLayoutOptions['layoutColumns'] || 1));
-          if (columns > 1) {
-            var columnGap = Number(this.panelLayoutOptions['layoutColumnGap']) || 0;
-            return "size: " + (this.width * columns + columnGap * (columns - 1)) + "mm " + this.height + "mm;";
-          }
-        }
+        const layoutSize = getRowLayoutPrintSize(this);
+        if (layoutSize) return layoutSize;
         return this.paperType ? "size:" + this.paperType + " " + (this.height > this.width ? "portrait" : "landscape") + ";" : "size: " + this.width + "mm " + this.height + "mm " + (this.orient ? 1 == this.orient ? "portrait" : "landscape" : "") + ";";
       }, t.prototype.deletePrintElement = function (t) {
         var e = this;
@@ -10704,29 +10675,7 @@ var hiprint = function (t) {
           appendElementByParamsList(paramsListToCreateHTML, onFinish);
         });
       }, t.prototype.applyPanelLayout = function (rootElement) {
-        if (this.printPanels.length !== 1) return rootElement;
-        var panel = this.printPanels[0], layout = panel.panelLayoutOptions || {};
-        if (layout.layoutType !== 'row') return rootElement;
-        var columns = Math.max(1, parseInt(layout.layoutColumns || 1));
-        if (columns < 2) return rootElement;
-        var columnGap = Number(layout.layoutColumnGap) || 0;
-        var pageWidth = panel.width * columns + columnGap * (columns - 1);
-        var pageHeight = panel.height;
-        // Chromium converts millimetres to fractional CSS pixels. Keeping the
-        // flow box a hair shorter prevents an otherwise empty trailing page.
-        var layoutPageHeight = Math.max(0, pageHeight - 0.1);
-        var panels = rootElement.children('.hiprint-printPanel').detach();
-        panels.each(function (index, element) {
-          var pageIndex = Math.floor(index / columns);
-          var page = rootElement.children('.hiprint-layout-page').eq(pageIndex);
-          if (!page.length) {
-            page = $('<div class="hiprint-layout-page"></div>').css({ width: pageWidth + 'mm', height: layoutPageHeight + 'mm' });
-            rootElement.append(page);
-          }
-          $(element).css({ left: (index % columns) * (panel.width + columnGap) + 'mm' });
-          page.append(element);
-        });
-        return rootElement;
+        return applyRowPanelLayout($, rootElement, this.printPanels);
       }, t.prototype.getHtml = function (t, e) {
         return t || (t = {}), this.getSimpleHtml(t, e);
       }, t.prototype.getHtmlAsync = function (t, e) {

@@ -55,7 +55,7 @@ app.component('Designer', Designer)
 - `template-change(type, template)`：模板新增、移动、删除、属性修改、尺寸调整或旋转时触发，`type` 常见值为 `add`、`move`、`delete`、`update`、`resize`、`rotate`。
 - `template-error(error)`：属性更新失败。
 - `preview(data)`、`print(data)`、`save(template)`：预览、打印、保存操作触发。
-- `html(html)`：点击顶部“获取 HTML”后触发，参数为当前渲染 HTML；同时会复制到剪贴板。
+- `html(html)`：点击顶部“获取 HTML”后触发，参数为可独立打开的完整 HTML；同时会复制到剪贴板。
 
 ```ts
 function onTemplateChange(type, template) {
@@ -74,12 +74,13 @@ function onTemplateError(error) {
 
 ## 获取渲染 HTML
 
-`template-ready` 返回的适配器可以把当前模板和业务数据渲染为完整 HTML 字符串。返回内容包含打印样式、分页布局和条码等元素：
+`template-ready` 返回的适配器支持两种结果：`getHtml()` 返回可嵌入当前页面的渲染片段，`getFullHtml()` 返回包含 `DOCTYPE`、基础打印 CSS 和渲染内容的独立文档：
 
 ```ts
 function onReady(template, adapter) {
-  const html = adapter.getHtml(printData)
-  console.log(html)
+  const fragment = adapter.getHtml(printData)
+  const documentHtml = adapter.getFullHtml(printData, { title: '商品标签' })
+  console.log(fragment, documentHtml)
 }
 ```
 
@@ -92,7 +93,7 @@ import { ref } from 'vue'
 const designer = ref()
 
 function getRenderedHtml() {
-  return designer.value?.getHtml()
+  return designer.value?.getFullHtml()
 }
 </script>
 
@@ -101,7 +102,7 @@ function getRenderedHtml() {
 </template>
 ```
 
-Vue 2 组件同样支持 `this.$refs.designer.getHtml(data)`。
+Vue 2 组件同样支持 `this.$refs.designer.getHtml(data)` 和 `this.$refs.designer.getFullHtml(data)`。
 
 也可以在组件挂载前注册自定义业务插件：
 

@@ -1,6 +1,8 @@
 import $ from 'jquery'
 import { hiprint } from '@hiprint-engine'
-import type { PrintAdapter, PrintData } from '../core/types'
+import printLockCss from '../../../vue-plugin-hiprint/src/hiprint/css/print-lock.css?raw'
+import { buildFullHtmlDocument } from '../../../vue-plugin-hiprint/src/hiprint/html-document.js'
+import type { FullHtmlOptions, PrintAdapter, PrintData } from '../core/types'
 import { pluginRegistry as defaultPluginRegistry, type PluginRegistry } from '../core/pluginRegistry'
 import { starterTemplate } from '../templates/starterTemplate'
 import type { DesignerChangeType } from '../core/types'
@@ -63,6 +65,9 @@ export class HiprintAdapter implements PrintAdapter {
     if (!this.instance) throw new Error('打印设计器尚未初始化')
     const html = this.instance.getHtml(data)
     return html?.[0]?.outerHTML ?? ''
+  }
+  getFullHtml(data: PrintData, options: FullHtmlOptions = {}) {
+    return buildFullHtmlDocument(this.getHtml(data), printLockCss, options)
   }
   preview(target: HTMLElement, data: PrintData) { $(target).empty().append(this.getHtml(data)) }
   print(data: PrintData) { this.instance?.print(data) }

@@ -83,7 +83,7 @@ export const twoColumnLabelsCase: DesignerTestCase = {
     { name: '复古运动鞋', sku: 'SN-2026-CRM-42', barcode: '6901234567823' },
   ],
   assertions: [
-    '预览应生成 4 个标签面板。',
+    '预览应为每条业务数据生成一个标签面板。',
     '标签采用横向续排，每张 82 × 30 mm 纸固定显示 2 个。',
     '每个标签的商品名称、SKU 和条形码应来自同一个数组元素。',
   ],

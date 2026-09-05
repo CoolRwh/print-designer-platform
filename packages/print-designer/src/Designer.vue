@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import App from './components/DesignerApp.vue'
-import type { PrintData } from './core/types'
+import type { FullHtmlOptions, PrintData } from './core/types'
 
 defineProps<{
   template?: Record<string, unknown>
@@ -19,7 +19,11 @@ function getHtml(data?: PrintData) {
   return app.value?.getHtml(data) ?? ''
 }
 
-defineExpose({ getHtml })
+function getFullHtml(data?: PrintData, options?: FullHtmlOptions) {
+  return app.value?.getFullHtml(data, options) ?? ''
+}
+
+defineExpose({ getHtml, getFullHtml })
 </script>
 
 <template>
