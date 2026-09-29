@@ -4,20 +4,28 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "test": "node --test test",
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "build:lib": "vue-tsc --noEmit && vite build -c vite.lib.config.ts",
+    "build:lib": "vue-tsc --noEmit && vite build -c vite.lib.config.ts && vite build -c vite.adapter.config.ts && vue-tsc --declaration --emitDeclarationOnly --declarationMap false --outDir dist-lib",
     "preview": "vite preview"
   },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist-lib/public.d.ts",
       "import": "./dist-lib/print-designer.es.js",
       "require": "./dist-lib/print-designer.umd.cjs"
     },
-    "./style.css": "./dist-lib/hiprint-business-designer.css"
+    "./adapter": {
+      "types": "./dist-lib/adapter.d.ts",
+      "import": "./dist-lib/adapter.es.js",
+      "default": "./dist-lib/adapter.es.js"
+    },
+    "./style.css": "./dist-lib/designer.css",
+    "./print-lock.css": "./dist-lib/print-lock.css"
   },
-  "files": ["dist-lib", "src", "README.md"],
+  "types": "./dist-lib/public.d.ts",
+  "files": ["dist-lib", "README.md"],
   "peerDependencies": { "vue": "^3.5.0" },
   "dependencies": {
     "jquery": "^3.7.1",

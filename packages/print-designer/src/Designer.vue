@@ -27,5 +27,9 @@ defineExpose({ getHtml, getFullHtml })
 </script>
 
 <template>
-  <App ref="app" v-bind="$props" />
+  <App ref="app" v-bind="$props">
+    <template v-for="(_, name) in $slots" #[name]="slotProps">
+      <slot :name="name" v-bind="slotProps ?? {}" />
+    </template>
+  </App>
 </template>

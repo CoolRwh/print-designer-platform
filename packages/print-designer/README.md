@@ -30,8 +30,8 @@ npm run build:lib
 其它 Vue 3 项目可直接引入：
 
 ```ts
-import { Designer } from 'hiprint-business-designer'
-import 'hiprint-business-designer/style.css'
+import { Designer } from '@print-designer/designer'
+import '@print-designer/designer/style.css'
 
 app.component('Designer', Designer)
 ```
@@ -107,7 +107,7 @@ Vue 2 组件同样支持 `this.$refs.designer.getHtml(data)` 和 `this.$refs.des
 也可以在组件挂载前注册自定义业务插件：
 
 ```ts
-import { registerPlugin } from 'hiprint-business-designer'
+import { registerPlugin } from '@print-designer/designer'
 
 registerPlugin({
   id: 'warehouse', name: '仓储', icon: '▦', color: '#38bdf8',
@@ -162,11 +162,25 @@ async function loadTenantDesigner(tenantId: string) {
 />
 ```
 
-需要完全替换某个区域时，可使用 `toolbar`、`palette`、`canvas-toolbar`、`properties`、`footer` 插槽；替换区域时请保留 `.hiprintEpContainer`、`#hiprint-canvas`、`#hiprint-settings` 和 `#hiprint-pagination` 这些挂载节点。
+需要完全替换某个区域时，可使用 `toolbar`、`palette`、`canvas-toolbar`、`properties`、`footer` 插槽。缺少引擎面板容器时使用隐藏容器，不影响画布初始化；挂载节点规则见文末说明。
 
 也可以使用插件安装方式：
 
 ```ts
-import DesignerPlugin from 'hiprint-business-designer'
+import DesignerPlugin from '@print-designer/designer'
 app.use(DesignerPlugin)
 ```
+
+## 独立打印样式
+
+只展示 `getHtml()` 返回的打印片段时，将 `dist-lib/print-lock.css` 复制到业务项目静态目录并在页面入口加入：
+
+```html
+<link rel="stylesheet" href="/print-lock.css">
+```
+
+无需加载设计器组件或完整 `style.css`。不指定 `media`，样式才能用于屏幕展示和打印；也可以使用 `import '@print-designer/designer/print-lock.css'`。iframe、新窗口需要在各自文档中加载；`getFullHtml()` 和组件发起的打印已内嵌该 CSS。直接调用底层客户端接口且未传 `styleHandler` 时，还需额外加入 `<link rel="stylesheet" href="/print-lock.css" media="print">`，供旧接口查找。
+
+`registerPlugin()` 注册的插件在创建组件时复制到实例；请在组件挂载前注册。Vue 2 从 `@print-designer/designer-vue2` 导入该方法。运行期间增删插件使用组件的 `plugins` 参数。每个实例独立注册，导出的模板仍使用稳定的 `business.*` 标识。
+
+自定义 palette、properties、footer 插槽无需保留内部节点。需要显示引擎面板时，在插槽中提供 `.hiprintEpContainer`、`.hiprint-settings`、`.hiprint-pagination` 容器；未提供时由组件创建隐藏容器。容器应在挂载时存在并保持稳定。

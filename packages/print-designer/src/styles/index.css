@@ -268,14 +268,14 @@
     linear-gradient(90deg, #ffffff08 1px, transparent 1px);
   background-size: 20px 20px;
 }
-#hiprint-canvas {
+.hiprint-canvas {
   min-width: 630px;
   min-height: 890px;
 }
 .hiprint-printPanel {
   box-shadow: 0 12px 40px #0009 !important;
 }
-.properties #hiprint-settings {
+.properties .hiprint-settings {
   padding: 8px;
   color: #aeb9c8;
 }
@@ -411,27 +411,27 @@
 }
 
 /* Hiprint works on a print-white surface; keep the application chrome separate. */
-#hiprint-canvas .hiprint-printPaper {
+.hiprint-canvas .hiprint-printPaper {
   background-color: #fff !important;
   color: #172033 !important;
   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.34) !important;
 }
-#hiprint-canvas .hiprint-printElement:not(.editing):hover .resize-panel {
+.hiprint-canvas .hiprint-printElement:not(.editing):hover .resize-panel {
   background-color: transparent !important;
 }
-#hiprint-canvas .design .resize-panel {
+.hiprint-canvas .design .resize-panel {
   border: 0 !important;
   outline: 1px solid #2563eb !important;
   outline-offset: 2px !important;
   background: transparent !important;
 }
-#hiprint-canvas .resize-panel .resizebtn {
+.hiprint-canvas .resize-panel .resizebtn {
   display: none !important;
 }
-#hiprint-canvas .resize-panel.selected .resizebtn {
+.hiprint-canvas .resize-panel.selected .resizebtn {
   display: block !important;
 }
-#hiprint-canvas .resize-panel.selected .resizebtn:not(.r) {
+.hiprint-canvas .resize-panel.selected .resizebtn:not(.r) {
   width: 9px !important;
   height: 9px !important;
   border: 2px solid #fff !important;
@@ -440,19 +440,19 @@
   box-shadow: 0 0 0 1px #2563eb !important;
   box-sizing: border-box !important;
 }
-#hiprint-canvas .resize-panel.selected .r.resizebtn {
+.hiprint-canvas .resize-panel.selected .r.resizebtn {
   display: none !important;
 }
-#hiprint-canvas .resize-panel .size-box,
-#hiprint-canvas .hiprint-printElement-table > .size-box {
+.hiprint-canvas .resize-panel .size-box,
+.hiprint-canvas .hiprint-printElement-table > .size-box {
   display: none !important;
 }
-#hiprint-canvas .hiprint-printElement.design .del-btn {
+.hiprint-canvas .hiprint-printElement.design .del-btn {
   background: #ef4444 !important;
   border: 2px solid #fff !important;
   line-height: 10px !important;
 }
-#hiprint-canvas .hiprint-printElement-table > .resizebtn {
+.hiprint-canvas .hiprint-printElement-table > .resizebtn {
   display: none !important;
   width: 9px !important;
   height: 9px !important;
@@ -462,10 +462,10 @@
   box-shadow: 0 0 0 1px #2563eb !important;
   box-sizing: border-box !important;
 }
-#hiprint-canvas .hiprint-printElement-table:hover > .resizebtn {
+.hiprint-canvas .hiprint-printElement-table:hover > .resizebtn {
   display: block !important;
 }
-#hiprint-canvas .design .hiprint-printElement-table-handle {
+.hiprint-canvas .design .hiprint-printElement-table-handle {
   left: -7px !important;
   width: 7px !important;
   height: 100% !important;
@@ -474,7 +474,7 @@
   cursor: move !important;
   transition: border-color 0.15s, background-color 0.15s !important;
 }
-#hiprint-canvas
+.hiprint-canvas
   .hiprint-printElement-table:hover
   > .hiprint-printElement-table-handle {
   background: rgba(37, 99, 235, 0.08) !important;
@@ -581,52 +581,52 @@
 }
 
 /* Larger table resize targets. The visible dot is smaller than its hit area. */
-.studio-shell #hiprint-canvas .hiprint-printElement-table:hover > .resizebtn,
-.studio-shell #hiprint-canvas .hiprint-printElement-table:focus-within > .resizebtn {
+.studio-shell .hiprint-canvas .hiprint-printElement-table:hover > .resizebtn,
+.studio-shell .hiprint-canvas .hiprint-printElement-table:focus-within > .resizebtn {
   display: block !important;
   z-index: 30 !important;
   opacity: 1 !important;
 }
-.studio-shell #hiprint-canvas .hiprint-printElement-table > .e.resizebtn,
-.studio-shell #hiprint-canvas .hiprint-printElement-table > .w.resizebtn {
+.studio-shell .hiprint-canvas .hiprint-printElement-table > .e.resizebtn,
+.studio-shell .hiprint-canvas .hiprint-printElement-table > .w.resizebtn {
   width: 12px !important;
   height: 36px !important;
   margin-top: -18px !important;
   border-radius: 7px !important;
 }
-.studio-shell #hiprint-canvas .hiprint-printElement-table > .n.resizebtn,
-.studio-shell #hiprint-canvas .hiprint-printElement-table > .s.resizebtn {
+.studio-shell .hiprint-canvas .hiprint-printElement-table > .n.resizebtn,
+.studio-shell .hiprint-canvas .hiprint-printElement-table > .s.resizebtn {
   width: 36px !important;
   height: 12px !important;
   margin-left: -18px !important;
   border-radius: 7px !important;
 }
-.studio-shell #hiprint-canvas .hiprint-printElement-table > .se.resizebtn,
-.studio-shell #hiprint-canvas .hiprint-printElement-table > .sw.resizebtn,
-.studio-shell #hiprint-canvas .hiprint-printElement-table > .ne.resizebtn,
-.studio-shell #hiprint-canvas .hiprint-printElement-table > .nw.resizebtn {
+.studio-shell .hiprint-canvas .hiprint-printElement-table > .se.resizebtn,
+.studio-shell .hiprint-canvas .hiprint-printElement-table > .sw.resizebtn,
+.studio-shell .hiprint-canvas .hiprint-printElement-table > .ne.resizebtn,
+.studio-shell .hiprint-canvas .hiprint-printElement-table > .nw.resizebtn {
   width: 14px !important;
   height: 14px !important;
   border-radius: 50% !important;
 }
-.studio-shell #hiprint-canvas .hiprint-printElement-table > .resizebtn {
+.studio-shell .hiprint-canvas .hiprint-printElement-table > .resizebtn {
   border: 2px solid #fff !important;
   background: #2563eb !important;
   box-shadow: 0 0 0 1px #2563eb, 0 2px 8px rgba(0, 0, 0, 0.35) !important;
 }
-.studio-shell #hiprint-canvas .columngrip .gripResizer,
-.studio-shell #hiprint-canvas .rowgrip .gripResizer {
+.studio-shell .hiprint-canvas .columngrip .gripResizer,
+.studio-shell .hiprint-canvas .rowgrip .gripResizer {
   opacity: 0.18 !important;
   background: #3b82f6 !important;
 }
-.studio-shell #hiprint-canvas .columngrip .gripResizer:hover,
-.studio-shell #hiprint-canvas .rowgrip .gripResizer:hover {
+.studio-shell .hiprint-canvas .columngrip .gripResizer:hover,
+.studio-shell .hiprint-canvas .rowgrip .gripResizer:hover {
   opacity: 0.55 !important;
 }
 
 /* Element rotation handle. Hiprint already supplies the drag behavior. */
-.studio-shell #hiprint-canvas .resize-panel.selected .r.resizebtn,
-.studio-shell #hiprint-canvas .hiprint-printElement-table:hover > .r.resizebtn {
+.studio-shell .hiprint-canvas .resize-panel.selected .r.resizebtn,
+.studio-shell .hiprint-canvas .hiprint-printElement-table:hover > .r.resizebtn {
   display: grid !important;
   place-items: center !important;
   top: -32px !important;
@@ -642,16 +642,16 @@
   cursor: grab !important;
   z-index: 40 !important;
 }
-.studio-shell #hiprint-canvas .resize-panel.selected .r.resizebtn:active,
-.studio-shell #hiprint-canvas .hiprint-printElement-table:hover > .r.resizebtn:active {
+.studio-shell .hiprint-canvas .resize-panel.selected .r.resizebtn:active,
+.studio-shell .hiprint-canvas .hiprint-printElement-table:hover > .r.resizebtn:active {
   cursor: grabbing !important;
 }
-.studio-shell #hiprint-canvas .resize-panel.selected .r.resizebtn::before,
-.studio-shell #hiprint-canvas .hiprint-printElement-table:hover > .r.resizebtn::before {
+.studio-shell .hiprint-canvas .resize-panel.selected .r.resizebtn::before,
+.studio-shell .hiprint-canvas .hiprint-printElement-table:hover > .r.resizebtn::before {
   content: "↻";
   font: 700 14px/1 Arial, sans-serif;
 }
-.studio-shell #hiprint-canvas .resize-panel.selected::before {
+.studio-shell .hiprint-canvas .resize-panel.selected::before {
   content: "";
   position: absolute;
   top: -14px;
@@ -770,25 +770,25 @@
   border-color: var(--pd-border);
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
 }
-.studio-shell #hiprint-canvas .hiprint-printPaper {
+.studio-shell .hiprint-canvas .hiprint-printPaper {
   box-shadow: 0 18px 55px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Hiprint ruler assets are black SVGs; lift them on the dark canvas. */
-.studio-shell #hiprint-canvas .hiprint_rul_wrapper {
+.studio-shell .hiprint-canvas .hiprint_rul_wrapper {
   border-top-color: #8495ad !important;
   border-left-color: #8495ad !important;
   opacity: 0.95;
 }
-.studio-shell #hiprint-canvas .hiprint_rul_wrapper .h_img,
-.studio-shell #hiprint-canvas .hiprint_rul_wrapper .v_img {
+.studio-shell .hiprint-canvas .hiprint_rul_wrapper .h_img,
+.studio-shell .hiprint-canvas .hiprint_rul_wrapper .v_img {
   filter: invert(88%) sepia(8%) saturate(540%) hue-rotate(176deg) brightness(94%);
   opacity: 0.9;
 }
 
 /* Page regions are designer-only helpers; generated print HTML does not contain them. */
-.studio-shell #hiprint-canvas .hiprint-headerLine,
-.studio-shell #hiprint-canvas .hiprint-footerLine {
+.studio-shell .hiprint-canvas .hiprint-headerLine,
+.studio-shell .hiprint-canvas .hiprint-footerLine {
   height: 14px !important;
   border-top-width: 2px !important;
   border-top-style: dashed !important;
@@ -796,16 +796,16 @@
   cursor: ns-resize !important;
   opacity: 0.95 !important;
 }
-.studio-shell #hiprint-canvas .hiprint-headerLine {
+.studio-shell .hiprint-canvas .hiprint-headerLine {
   border-top-color: #2563eb !important;
   box-shadow: 0 -5px 12px rgba(37, 99, 235, 0.14) !important;
 }
-.studio-shell #hiprint-canvas .hiprint-footerLine {
+.studio-shell .hiprint-canvas .hiprint-footerLine {
   border-top-color: #f59e0b !important;
   box-shadow: 0 5px 12px rgba(245, 158, 11, 0.14) !important;
 }
-.studio-shell #hiprint-canvas .hiprint-headerLine::before,
-.studio-shell #hiprint-canvas .hiprint-footerLine::before {
+.studio-shell .hiprint-canvas .hiprint-headerLine::before,
+.studio-shell .hiprint-canvas .hiprint-footerLine::before {
   position: absolute;
   left: 8px;
   top: -20px;
@@ -818,16 +818,17 @@
   pointer-events: none;
   white-space: nowrap;
 }
-.studio-shell #hiprint-canvas .hiprint-headerLine::before {
-  content: "页眉结束线 · 可拖动";
+.studio-shell .hiprint-canvas .hiprint-headerLine::before {
+  /* Keep labels ASCII-safe when deployed CSS is served with a legacy charset. */
+  content: "\9875\7709\7ed3\675f\7ebf\20\00b7\20\53ef\62d6\52a8";
   background: #2563eb;
 }
-.studio-shell #hiprint-canvas .hiprint-footerLine::before {
-  content: "页脚开始线 · 可拖动";
+.studio-shell .hiprint-canvas .hiprint-footerLine::before {
+  content: "\9875\811a\5f00\59cb\7ebf\20\00b7\20\53ef\62d6\52a8";
   background: #d97706;
 }
-.studio-shell #hiprint-canvas .hiprint-headerLine:hover,
-.studio-shell #hiprint-canvas .hiprint-footerLine:hover {
+.studio-shell .hiprint-canvas .hiprint-headerLine:hover,
+.studio-shell .hiprint-canvas .hiprint-footerLine:hover {
   border-top-style: solid !important;
   opacity: 1 !important;
 }

@@ -50,7 +50,7 @@ export interface DesignerModules {
 }
 
 export interface PrintAdapter {
-  mount(target: string, settingTarget: string, paginationTarget: string): void
+  mount(target: string | HTMLElement, settingTarget: string | HTMLElement, paginationTarget: string | HTMLElement, paletteTarget?: string | HTMLElement): void
   destroy(): void
   getTemplate(): Record<string, unknown>
   updateTemplate(template: Record<string, unknown>): void

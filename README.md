@@ -41,6 +41,18 @@ import {
 
 ## Vue3 与 Vue2.6
 
+### 单独加载打印样式
+
+仅展示打印 HTML 的页面可以独立加载打印样式，无需引入设计器组件或完整界面样式。将构建后的 `dist-lib/print-lock.css` 复制到业务项目静态目录，并在页面入口加入：
+
+```html
+<link rel="stylesheet" href="/print-lock.css">
+```
+
+不指定 `media`，样式才能同时用于屏幕展示和打印；也可以使用 `import '@print-designer/designer/print-lock.css'`。该文件由 `pnpm build:designer` 生成。直接调用底层客户端接口且未传 `styleHandler` 时，还需额外加入 `<link rel="stylesheet" href="/print-lock.css" media="print">`，供旧接口查找。
+
+`getHtml()` 返回的片段需要在展示页面加载此样式；独立 iframe 或新窗口需要在各自文档中加载。`getFullHtml()` 和设计器组件发起的打印已内嵌打印样式，无需重复引入。设计器页面仍使用 `@print-designer/designer/style.css`。
+
 Vue3 项目安装 `@print-designer/designer`，Vue2.6 项目安装 `@print-designer/designer-vue2`，两者共享 `plugins`、`template`、`data` 参数和模板事件。
 
 ```vue
@@ -78,4 +90,4 @@ async function loadTenant(tenantId: string) {
 
 左侧组件区的“＋”会打开插件管理器，可以录入插件 ID、名称、颜色以及字段 JSON。生产环境可监听 `plugin-add`，将配置保存到当前租户的后端接口。
 
-可通过 `modules` 控制 toolbar、palette、canvasToolbar、properties、footer，并通过同名插槽替换模块。替换时需保留 `.hiprintEpContainer`、`#hiprint-canvas`、`#hiprint-settings`、`#hiprint-pagination`。
+可通过 `modules` 控制 toolbar、palette、canvasToolbar、properties、footer，并通过插槽替换模块（画布工具栏插槽名为 `canvas-toolbar`）。无需保留内部节点；需要显示引擎面板时，在对应插槽中提供 `.hiprintEpContainer`、`.hiprint-settings` 或 `.hiprint-pagination` 容器，未提供时使用隐藏容器。

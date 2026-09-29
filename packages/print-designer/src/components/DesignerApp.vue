@@ -22,6 +22,11 @@ const modules = computed(() => ({
 }))
 
 const registry = createPluginRegistry(builtinPlugins)
+const root = ref<HTMLElement>()
+const canvas = ref<HTMLElement>()
+const settings = ref<HTMLElement>()
+const pagination = ref<HTMLElement>()
+const palette = ref<HTMLElement>()
 
 const emit = defineEmits<{
   (event: 'template-change', type: DesignerChangeType, template: Record<string, unknown>): void
@@ -40,15 +45,22 @@ const emit = defineEmits<{
 const pluginRevision = ref(0)
 const pluginManagerOpen = ref(false)
 function registerExternalPlugins(value?: BusinessPlugin[]) {
-  registry.syncExternal(value ?? [])
-  pluginRevision.value++
+  try {
+    registry.syncExternal(value ?? [])
+    pluginRevision.value++
+    return true
+  } catch (error) {
+    emit('template-error', error)
+    return false
+  }
 }
 registerExternalPlugins(props.plugins)
 
+const initialTestCase = props.testCases?.find((item) => item.id === props.initialTestCaseId)
 const adapter = new HiprintAdapter((type, template) => {
   dirty.value = true
   emit('template-change', type, template)
-}, { template: props.template, registry, onUpdateError: (error) => emit('template-error', error) })
+}, { template: props.template ?? initialTestCase?.template, registry, onUpdateError: (error) => emit('template-error', error) })
 const zoom = ref(1)
 const paper = ref('A4')
 const page = ref(1)
@@ -68,17 +80,44 @@ const paperTypes: Record<string, [number, number]> = { A4: [210, 296.6], A5: [14
 const zoomLabel = computed(() => `${Math.round(zoom.value * 100)}%`)
 
 let mounted = false
+let disposed = false
+const timers = new Set<number>()
+function later(callback: () => void, delay: number) {
+  const timer = window.setTimeout(() => { timers.delete(timer); if (!disposed) callback() }, delay)
+  timers.add(timer)
+}
+function mountNode(selector: string, element?: HTMLElement) {
+  const existing = element ?? root.value?.querySelector<HTMLElement>(selector)
+  if (existing) return existing
+  const hidden = document.createElement('div')
+  hidden.hidden = true
+  root.value!.appendChild(hidden)
+  return hidden
+}
 onMounted(() => nextTick(() => {
-  adapter.mount('#hiprint-canvas', '#hiprint-settings', '#hiprint-pagination')
-  window.setTimeout(fitCanvas, 80)
+  if (disposed || !root.value) return
+  const canvasTarget = canvas.value ?? root.value?.querySelector<HTMLElement>('#hiprint-canvas')
+  const settingsTarget = mountNode('.hiprint-settings, #hiprint-settings', settings.value)
+  const paginationTarget = mountNode('.hiprint-pagination, #hiprint-pagination', pagination.value)
+  const paletteTarget = mountNode('.hiprintEpContainer', palette.value)
+  if (!canvasTarget || !settingsTarget || !paginationTarget || !paletteTarget) {
+    emit('template-error', new Error('设计器挂载节点不完整'))
+    return
+  }
+  adapter.mount(canvasTarget, settingsTarget, paginationTarget, paletteTarget)
+  later(fitCanvas, 80)
   mounted = true
   emit('template-ready', adapter.getTemplate(), adapter)
 }))
-onBeforeUnmount(() => adapter.destroy())
+onBeforeUnmount(() => {
+  disposed = true
+  timers.forEach((timer) => window.clearTimeout(timer))
+  timers.clear()
+  adapter.destroy()
+})
 
 watch(() => props.plugins, (value) => {
-  registerExternalPlugins(value)
-  if (mounted) adapter.refreshPlugins()
+  if (registerExternalPlugins(value) && mounted) adapter.refreshPlugins()
 }, { deep: true })
 
 function addPlugin(plugin: BusinessPlugin) {
@@ -99,11 +138,11 @@ watch(() => props.template, (value) => {
   if (mounted && value) adapter.updateTemplate(value)
 }, { deep: true })
 
-function notify(message: string) { toast.value = message; window.setTimeout(() => { if (toast.value === message) toast.value = '就绪' }, 2400) }
+function notify(message: string) { toast.value = message; later(() => { if (toast.value === message) toast.value = '就绪' }, 2400) }
 function changeZoom(delta: number) { zoom.value = Math.min(2, Math.max(.35, +(zoom.value + delta).toFixed(2))); adapter.zoom(zoom.value) }
 function fitCanvas() {
-  const viewport = document.querySelector<HTMLElement>('.canvas-scroll')
-  const paperElement = document.querySelector<HTMLElement>('#hiprint-canvas .hiprint-printPaper')
+  const viewport = root.value?.querySelector<HTMLElement>('.canvas-scroll')
+  const paperElement = canvas.value?.querySelector<HTMLElement>('.hiprint-printPaper')
   if (!viewport || !paperElement) return
   const availableWidth = Math.max(260, viewport.clientWidth - 56)
   zoom.value = +Math.max(.35, Math.min(1, availableWidth / paperElement.offsetWidth)).toFixed(2)
@@ -117,7 +156,7 @@ function loadTestCase() {
   dirty.value = false
   emit('test-case-change', testCase)
   notify(`已加载：${testCase.name}`)
-  window.setTimeout(fitCanvas, 80)
+  later(fitCanvas, 80)
 }
 function save() { const template = adapter.getTemplate(); dirty.value = false; emit('save', template); notify('已提交保存事件') }
 function exportJson() {
@@ -159,7 +198,7 @@ async function silentPrint() { try { emit('print', sampleData.value); await adap
 function clearTemplate() { if (window.confirm('确定清空当前页面的全部元素吗？')) { adapter.clear(); dirty.value = true } }
 function filterPlugin(id: string) {
   activePlugin.value = id
-  document.querySelectorAll<HTMLElement>('.hiprintEpContainer .ep-draggable-item[tid]').forEach((el) => {
+  palette.value?.querySelectorAll<HTMLElement>('.ep-draggable-item[tid]').forEach((el) => {
     const tid = el.getAttribute('tid') ?? ''
     const row = el.closest<HTMLElement>('li') ?? el
     row.style.display = id === 'all' || tid.includes(`.${id}.`) ? '' : 'none'
@@ -170,7 +209,7 @@ defineExpose({ getHtml, getFullHtml })
 </script>
 
 <template>
-  <div class="studio-shell">
+  <div ref="root" class="studio-shell">
     <header v-if="modules.toolbar" class="topbar">
       <slot name="toolbar">
       <div class="brand"><span class="brand-mark">P</span><div><strong>Print Studio</strong><small>HIPRINT DESIGNER</small></div></div>
@@ -192,7 +231,7 @@ defineExpose({ getHtml, getFullHtml })
     </header>
 
     <main class="workspace">
-      <aside v-if="modules.palette" class="palette panel">
+      <aside v-show="modules.palette" class="palette panel">
         <slot name="palette">
         <div class="panel-heading"><span>{{ modules.labels?.palette ?? '业务组件' }}</span><button title="插件管理" @click="pluginManagerOpen = true">＋</button></div>
         <div class="plugin-tabs">
@@ -200,7 +239,7 @@ defineExpose({ getHtml, getFullHtml })
           <button v-for="plugin in plugins" :key="plugin.id" :class="{ active: activePlugin === plugin.id }" :style="{ '--plugin': plugin.color }" @click="filterPlugin(plugin.id)">{{ plugin.icon }} {{ plugin.name }}</button>
         </div>
         <div class="palette-hint">拖动字段到画布</div>
-        <div class="hiprintEpContainer"></div>
+        <div ref="palette" class="hiprintEpContainer"></div>
         <div class="plugin-footer"><span>●</span> {{ plugins.length }} 个插件已启用</div>
         </slot>
       </aside>
@@ -213,21 +252,21 @@ defineExpose({ getHtml, getFullHtml })
           <span class="canvas-tip">拖拽组件 · 单击选中 · Delete 删除</span>
           </slot>
         </div>
-        <div class="canvas-scroll"><div id="hiprint-canvas"></div></div>
+        <div class="canvas-scroll"><div ref="canvas" class="hiprint-canvas"></div></div>
       </section>
 
-      <aside v-if="modules.properties" class="properties panel">
+      <aside v-show="modules.properties" class="properties panel">
         <slot name="properties">
         <div class="panel-heading"><span>{{ modules.labels?.properties ?? '属性设置' }}</span><span class="selection-tag">选中元素</span></div>
-        <div id="hiprint-settings"></div>
+        <div ref="settings" class="hiprint-settings"></div>
         </slot>
       </aside>
     </main>
 
-    <footer v-if="modules.footer" class="statusbar">
+    <footer v-show="modules.footer" class="statusbar">
       <slot name="footer">
       <div><span class="ready-dot"></span>{{ toast }}</div>
-      <div id="hiprint-pagination"></div>
+      <div ref="pagination" class="hiprint-pagination"></div>
       <div class="zoom"><button @click="changeZoom(-.1)">−</button><input v-model.number="zoom" type="range" min=".35" max="2" step=".05" @input="adapter.zoom(zoom)" /><button @click="changeZoom(.1)">＋</button><span>{{ zoomLabel }}</span></div>
       </slot>
     </footer>

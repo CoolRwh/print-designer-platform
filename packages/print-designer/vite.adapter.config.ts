@@ -1,11 +1,7 @@
 import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
+import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
-  plugins: [vue()],
-  // Preserve ASCII escapes in generated CSS, regardless of the server charset.
-  esbuild: { charset: 'ascii' },
-  server: { port: 5178 },
   resolve: {
     dedupe: ['jquery'],
     alias: {
@@ -13,7 +9,15 @@ export default defineConfig({
       'nzh/dist/nzh.min.js': new URL('../vue-plugin-hiprint/node_modules/nzh/dist/nzh.min.js', import.meta.url).pathname,
     },
   },
-  optimizeDeps: {
-    include: ['jquery'],
+  build: {
+    outDir: 'dist-lib',
+    emptyOutDir: false,
+    cssCodeSplit: false,
+    lib: {
+      entry: fileURLToPath(new URL('./src/adapter.ts', import.meta.url)),
+      formats: ['es'],
+      fileName: () => 'adapter.es.js',
+      cssFileName: 'adapter',
+    },
   },
 })

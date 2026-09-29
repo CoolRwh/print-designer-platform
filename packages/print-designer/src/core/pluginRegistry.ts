@@ -19,6 +19,12 @@ export class PluginRegistry {
   }
 
   syncExternal(plugins: BusinessPlugin[] = []) {
+    const ids = new Set<string>()
+    for (const plugin of plugins) {
+      if (this.builtinPluginIds.has(plugin.id)) throw new Error(`租户插件 ${plugin.id} 与内置插件重名，请使用业务前缀`)
+      if (ids.has(plugin.id)) throw new Error(`插件 ${plugin.id} 重复`)
+      ids.add(plugin.id)
+    }
     for (const id of this.externalPluginIds) this.plugins.delete(id)
     this.externalPluginIds.clear()
     for (const plugin of plugins) {
@@ -48,18 +54,18 @@ export class PluginRegistry {
     return Object.assign({}, ...this.all().map((plugin) => plugin.sampleData))
   }
 
-  createHiprintProvider(hiprint: any) {
+  createHiprintProvider(hiprint: any, namespace = 'business') {
     const plugins = this.all()
     return function BusinessProvider() {
       return {
         addElementTypes(context: any) {
-          context.removePrintElementTypes('business')
+          context.removePrintElementTypes(namespace)
           context.addPrintElementTypes(
-            'business',
+            namespace,
             plugins.map(
               (plugin) => new hiprint.PrintElementTypeGroup(
                 `${plugin.icon} ${plugin.name}`,
-                plugin.fields.map((field) => fieldToElement(plugin, field)),
+                plugin.fields.map((field) => fieldToElement(plugin, field, namespace)),
               ),
             ),
           )
@@ -69,11 +75,11 @@ export class PluginRegistry {
   }
 }
 
-function fieldToElement(plugin: BusinessPlugin, field: BusinessField) {
+function fieldToElement(plugin: BusinessPlugin, field: BusinessField, namespace: string) {
   const kind = field.kind ?? 'text'
   const type = kind === 'barcode' || kind === 'qrcode' ? 'text' : kind
   const element: Record<string, unknown> = {
-    tid: `business.${plugin.id}.${field.key}`,
+    tid: `${namespace}.${plugin.id}.${field.key}`,
     title: field.label,
     data: field.sample ?? field.label,
     type,
@@ -110,6 +116,9 @@ export const pluginRegistry = new PluginRegistry()
 export function createPluginRegistry(initial: BusinessPlugin[] = []) {
   const registry = new PluginRegistry()
   initial.forEach((plugin) => registry.registerBuiltIn(plugin))
+  for (const plugin of pluginRegistry.all()) {
+    if (!registry.get(plugin.id)) registry.register(plugin)
+  }
   return registry
 }
 

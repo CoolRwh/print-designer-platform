@@ -1,0 +1,12 @@
+.print-designer-vue2 { display:flex; flex-direction:column; height:100%; min-height:600px; background:#101722; color:#dce7f5; }
+.print-designer-vue2 .designer-toolbar { padding:10px 16px; display:flex; gap:10px; align-items:center; border-bottom:1px solid #29384b; }
+.print-designer-vue2 .designer-toolbar strong { margin-right:auto; }
+.print-designer-vue2 .designer-toolbar button { background:#2463eb; border:0; color:#fff; padding:6px 14px; border-radius:4px; cursor:pointer; }
+.print-designer-vue2 .designer-body { display:flex; flex:1; min-height:0; }
+.print-designer-vue2 .designer-palette,
+.print-designer-vue2 .designer-properties { width:240px; padding:12px; overflow:auto; border-right:1px solid #29384b; }
+.print-designer-vue2 .designer-properties { border-left:1px solid #29384b; border-right:0; }
+.print-designer-vue2 .designer-canvas { flex:1; overflow:auto; background:#e8edf3; padding:24px; }
+.print-designer-vue2 .designer-pagination { min-height:20px; }
+.print-designer-vue2 .palette-title,
+.print-designer-vue2 .properties-title { font-weight:600; margin-bottom:12px; }

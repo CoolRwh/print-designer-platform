@@ -151,12 +151,13 @@ var hiprint = function (t) {
 }([function (t, e, n) {/**/
   "use strict";
 
-  var i;
+  var i, eventOwners = {};
   n.d(e, "a", function () {
     return hinnn;
   }), window.hinnn = {}, hinnn.event = (i = {}, {
-    on: function on(t, e) {
+    on: function on(t, e, owner) {
       i[t] || (i[t] = []), i[t].push(e);
+      if (owner) (eventOwners[owner] || (eventOwners[owner] = [])).push([t, e]);
     },
     id: 0,
     off: function off(t, e) {
@@ -178,7 +179,15 @@ var hiprint = function (t) {
       }
     },
     clear: function clear(t) {
-      i[t] = [];
+      delete i[t];
+    },
+    clearTemplate: function (id) {
+      var self = this;
+      (eventOwners[id] || []).forEach(function (entry) { self.off(entry[0], entry[1]); });
+      delete eventOwners[id];
+      Object.keys(i).forEach(function (key) {
+        if (key.endsWith('_' + id)) delete i[key];
+      });
     },
     getId: function getId() {
       return this.id += 1, this.id;
@@ -1433,13 +1442,13 @@ var hiprint = function (t) {
             var templete = _HiPrintlib__WEBPACK_IMPORTED_MODULE_6__.a.instance.getPrintTemplateById(n.templateId)
             templete.deletePrintElement(n)
             hinnn.event.trigger("hiprintTemplateDataChanged_" + n.templateId, "删除");
-            hinnn.event.trigger("clearSettingContainer")
+            hinnn.event.trigger("clearSettingContainer_" + n.templateId)
              // 获取到了template 拿到template里面所有被选中的元素
              els.forEach(ele=>{
               templete.deletePrintElement(ele)
               hinnn.event.trigger("hiprintTemplateDataChanged_" + ele.templateId, "删除");
             })
-            hinnn.event.trigger("clearSettingContainer")
+            hinnn.event.trigger("clearSettingContainer_" + n.templateId)
             break
           case 37:
             i = n.options.getLeft();
@@ -6034,7 +6043,7 @@ var hiprint = function (t) {
         }), _assets_plugins_hinnn__WEBPACK_IMPORTED_MODULE_3__.a.event.on("updateTable" + this.hitable.id, function () {
           t.updateDesignViewFromOptions();
           _assets_plugins_hinnn__WEBPACK_IMPORTED_MODULE_3__.a.event.trigger("hiprintTemplateDataChanged_" + t.templateId, "调整表头");
-        });
+        }, t.templateId);
       }, TablePrintElement.prototype.setColumnsOptions = function () {
         var t = this;
         this.designTarget.find(".hiprint-printElement-tableTarget:eq(0)").find("thead td").bind("click.hiprint", function (e) {
@@ -9613,6 +9622,8 @@ var hiprint = function (t) {
         var i = t.formatterModule(n),
           o = new l().createPrintElementTypeHtml(e, this.getElementTypeGroups(i));
         this.enableDrag(o);
+      }, t.remove = function (namespace) {
+        a.instance.removePrintElementTypes(namespace);
       }, t.buildByHtml = function (t) {
         this.enableDrag(t);
       }, t.enableDrag = function (e) {
@@ -9798,8 +9809,10 @@ var hiprint = function (t) {
         }
       }, t.prototype.bindShortcutKeyEvent = function () {
         var n = this;
-        $(document).keydown(function (e) {
-          if ('INPUT' == e.target.tagName) return;
+        $(document).off('keydown.hiprint_' + n.templateId).on('keydown.hiprint_' + n.templateId, function (e) {
+          var template = s.a.instance.getPrintTemplateById(n.templateId);
+          if (!template || !template.container || !template.container[0].contains(e.target)) return;
+          if ($(e.target).closest('input, textarea, select, [contenteditable="true"]').length) return;
           // ctrl/command + z 撤销 / ctrl/command + shift + z 重做
           if ((e.ctrlKey || e.metaKey) && 90 == e.keyCode) {
             if (e.shiftKey) {
@@ -10317,7 +10330,7 @@ var hiprint = function (t) {
           n.buildSetting(t);
         }), o.a.event.on(t.getBuildCustomOptionSettingEventKey(), function (t) {
           n.buildSettingByCustomOptions(t);
-        }), o.a.event.on('clearSettingContainer', function () {
+        }), o.a.event.on('clearSettingContainer_' + t.id, function () {
           n.clearSettingContainer();
         });
       }
@@ -10604,10 +10617,20 @@ var hiprint = function (t) {
           e.printPanels.push(new pt(t, e.id));
         }), n.fontList && (this.fontList = n.fontList), n.fields && (this.fields = n.fields), n.onImageChooseClick && (this.onImageChooseClick = n.onImageChooseClick),
           n.onPanelAddClick && (this.onPanelAddClick = n.onPanelAddClick),
-        n.settingContainer && new ut(this, n.settingContainer), n.paginationContainer && (this.printPaginationCreator = new dt(n.paginationContainer, this), this.printPaginationCreator.buildPagination()), this.initAutoSave();
+        n.settingContainer && (this.printElementOptionSetting = new ut(this, n.settingContainer)), n.paginationContainer && (this.printPaginationCreator = new dt(n.paginationContainer, this), this.printPaginationCreator.buildPagination()), this.initAutoSave();
       }
 
-      return t.prototype.design = function (t, e) {
+      return t.prototype.destroy = function () {
+        $(document).off('.hiprint_' + this.id);
+        o.a.event.clearTemplate(this.id);
+        if (this.printElementOptionSetting) this.printElementOptionSetting.clearSettingContainer();
+        if (this.printPaginationCreator) this.printPaginationCreator.jqPaginationContainer.empty();
+        if (this.container) this.container.empty();
+        delete s.a.instance.printTemplateContainer[this.id];
+        this.printPanels = [];
+        this.historyList = [];
+        this.onDataChanged = this.onUpdateError = null;
+      }, t.prototype.design = function (t, e) {
         var n = this;
 
         if (e || (e = {}), 0 == this.printPanels.length) {
@@ -10765,7 +10788,12 @@ var hiprint = function (t) {
           if (e.styleHandler) {
             css += e.styleHandler()
           }
+          if (css) return n.sentToClient(css, t, e);
           if (r.length <= 0) {
+            if (css) {
+              n.sentToClient(css, t, e);
+              return;
+            }
             throw new Error("请在 入口文件(index.html) 中引入 print-lock.css. 注意: link[media=\"print\"]");
             return;
           }
@@ -10781,7 +10809,7 @@ var hiprint = function (t) {
               }
             }, s.send();
           });
-        } else alert(`${i18n.__('连接客户端失败')}`);
+        } else throw new Error(i18n.__('连接客户端失败'));
       }, t.prototype.imageToBase64 = function (t) {
         var e = $(t).attr("src");
         if (-1 == e.indexOf("base64")) try {
@@ -10806,7 +10834,7 @@ var hiprint = function (t) {
         i.imgToBase64 = i.imgToBase64 ?? false;
         if (i.printByFragments) {
           // 分批打印
-          this.getHtmlAsync(e, i)
+          return this.getHtmlAsync(e, i)
             .then(rootElement => {
               var o = t + rootElement[0].outerHTML;
               i.id = s.a.instance.guid(), i.html = o, i.templateId = this.id, hiwebSocket.sendByFragments(i, n);
@@ -10823,8 +10851,18 @@ var hiprint = function (t) {
           var n = this,
             i = 0,
             o = {},
-            r = $('link[media=print][href*="print-lock"]');
+            r = $('link[media=print][href*="print-lock"]'),
+            css = '';
+          if (e.styleHandler) {
+            css += e.styleHandler();
+          }
           if (r.length <= 0) {
+            if (css) {
+              var html = css + $(t)[0].outerHTML,
+                options = $.extend({}, e || {});
+              options.id = s.a.instance.guid(), options.html = html, options.templateId = n.id, hiwebSocket.send(options);
+              return;
+            }
             throw new Error("请在 入口文件(index.html) 中引入 print-lock.css. 注意: link[media=\"print\"]");
             return;
           }
@@ -10836,7 +10874,7 @@ var hiprint = function (t) {
                   p += o[u + ""];
                 }
 
-                var d = p + $(t)[0].outerHTML,
+                var d = css + p + $(t)[0].outerHTML,
                   c = $.extend({}, e || {});
                 c.id = s.a.instance.guid(), c.html = d, c.templateId = n.id, hiwebSocket.send(c);
               }

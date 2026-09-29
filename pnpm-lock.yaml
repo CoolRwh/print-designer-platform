@@ -37,7 +37,7 @@ importers:
         version: 3.3.11(typescript@5.9.3)
 
   packages/print-designer-vue2:
-    dependencies:
+    devDependencies:
       '@print-designer/designer':
         specifier: workspace:*
         version: link:../print-designer
